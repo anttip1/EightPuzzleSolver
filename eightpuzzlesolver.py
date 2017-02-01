@@ -21,7 +21,7 @@ class Board(object):
             self.state = state
         else:
             self.state = tuple(np.random.permutation(list(self.goal_state)))
-            while not self.is_solvable() and self.tiles > 5:
+            while not self.is_solvable():
                 self.state = tuple(np.random.permutation(list(self.goal_state)))
 
         if parent is not None:
@@ -57,9 +57,11 @@ class Board(object):
     def is_solvable(self):
         # If there are odd number of inversions the state is not solvable (if there are 8 tiles)
         inversions = 0
-        for index, value in enumerate(self.state):
-            if index < len(self.state) - 1:
-                if value > self.state[index + 1]:
+        state_list = [value for value in list(self.state) if value != 0]
+
+        for index, value in enumerate(state_list):
+            for value2 in state_list[index+1:]:
+                if value > value2 :
                     inversions += 1
         return False if inversions % 2 != 0 else True
 
@@ -163,6 +165,7 @@ class EightPuzzle(object):
         self.unvisited.add(current_board)
 
         iteration = 0
+        print("********** ------------- ***********")
         print("Starting the algorithm. Weight = " + str(weight) + ", greedy = " + str(greedy))
         print("Initial state:")
         current_board.print()
@@ -215,6 +218,9 @@ class EightPuzzle(object):
             if iteration >= self.max_iterations:
                 print("Max iterations (" + str(self.max_iterations) + ") reached")
                 time_end = time.clock()
+                print("Total running time: " + str(time_end - time_start) + "s")
+
+
                 break
             if len(smallest_list) == 1:
                 current_board = smallest_list[0]
@@ -235,11 +241,12 @@ def main():
     list_of_puzzles = [EightPuzzle(20000, None, i) for i in range(1, 9)]
 
     for puzzle in list_of_puzzles:
-        print("**************")
+        #print("**************")
         print("Puzzle with " + str(puzzle.tiles) + " tiles ")
         for i in range(1, 11):
             puzzle.weighted_a_star(i)
         puzzle.greedy_best_first()
+        #puzzle.weighted_a_star(10)
 
 
 if __name__ == "__main__":
