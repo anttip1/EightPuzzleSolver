@@ -133,12 +133,14 @@ class Board(object):
 
 
 class EightPuzzle(object):
-    def __init__(self, max_iterations=5000, starting_state=None, tiles=8):
+    def __init__(self, max_iterations=5000, starting_state=None, tiles=8, random_select=False, print_trace=False):
         self.unvisited = set()  # It's faster to check if element is in a set than in a list.
         self.visited = set()
         self.max_iterations = max_iterations
         self.starting_state = starting_state
         self.tiles = tiles
+        self.random_select = random_select
+        self.print_trace = print_trace
 
     def backtrace(self, current_board):
         backtrace_list = []
@@ -151,10 +153,10 @@ class EightPuzzle(object):
         return backtrace_list
 
     def weighted_a_star(self, weight):
-        self.a_star(weight, False)
+        return self.a_star(weight, False)
 
     def greedy_best_first(self):
-        self.a_star(1, True)
+        return self.a_star(1, True)
 
     def a_star(self, weight=1, greedy=False):
         time_start = time.clock()
@@ -165,30 +167,35 @@ class EightPuzzle(object):
         self.unvisited.add(current_board)
 
         iteration = 0
-        print("********** ------------- ***********")
-        print("Starting the algorithm. Weight = " + str(weight) + ", greedy = " + str(greedy))
-        print("Initial state:")
-        current_board.print()
+        #print("********** ------------- ***********")
+        #print("Starting the algorithm. Weight = " + str(weight) + ", greedy = " + str(greedy))
+        #print("Initial state:")
+        #current_board.print()
         while True:
+
             self.visited.add(current_board)
             self.unvisited.remove(current_board)
 
             if current_board.is_goal_state():
                 time_end = time.clock()
-                print("Reached the solution after: " + str(iteration) + " iterations")
-                current_board.print()
-                print("Total visited states: " + str(len(self.visited)))
-                print("Yet to be explored states: " + str(len(self.unvisited)))
-                print("Total running time: " + str(time_end - time_start) + "s")
+                #print("Reached the solution after: " + str(iteration) + " iterations")
+                #current_board.print()
+                #print("Total visited states: " + str(len(self.visited)))
+                #print("Yet to be explored states: " + str(len(self.unvisited)))
+                running_time = time_end - time_start
+                #print("Total running time: " + str(time_end - time_start) + "s")
                 backtrace = self.backtrace(current_board)
                 backtrace.reverse()
-                print("Total steps: " + str(len(backtrace) - 1))
-                #print("The solution trace: ")
-                #for state in backtrace:
-                #    print("\n", end="")
-                #    state.print()
-                #print("*** End of execution ***")
-                break
+                #print("Total steps: " + str(len(backtrace) - 1))
+                if self.print_trace:
+                    print("The solution trace: ")
+                    for state in backtrace:
+                        print("\n", end="")
+                        state.print()
+                    print("*** End of execution ***")
+                return True, [iteration, running_time, len(self.visited), len(self.unvisited), len(backtrace)]
+
+
             for child in current_board.get_child_boards():
                 if child not in self.unvisited or child not in self.visited:
                     self.unvisited.add(child)
@@ -215,21 +222,26 @@ class EightPuzzle(object):
 
 
             iteration += 1
+
+
             if iteration >= self.max_iterations:
-                print("Max iterations (" + str(self.max_iterations) + ") reached")
+                #print("Max iterations (" + str(self.max_iterations) + ") reached")
                 time_end = time.clock()
-                print("Total running time: " + str(time_end - time_start) + "s")
+
+                running_time = time_end - time_start
+                #print("Total running time: " + str(time_end - time_start) + "s")
+                return False, [iteration, running_time]
 
 
-                break
-            if len(smallest_list) == 1:
-                current_board = smallest_list[0]
-            else:
+            if self.random_select:
                 current_board = random.choice(smallest_list)
-                # If multiple unvisited nodes with same cost, then pick by random.
+                # If multiple unvisited nodes with same cost, then we can pick the next by random.
+                # If you select the next board from the smallest board list by random, then the greedy
+                # best first quite often does not converge to the solution within the iteration limit.
+            else:
+                current_board = smallest_list[0]
 
-            #print("After " + str(iteration) + " iterations: ")
-            #current_board.print()
+
 
         #Let's empty these sets so that we can call this algorithm multiple times for the same instance.
         self.unvisited = set()
@@ -238,16 +250,18 @@ class EightPuzzle(object):
 
 def main():
 
-    list_of_puzzles = [EightPuzzle(20000, None, i) for i in range(1, 9)]
+
+    list_of_puzzles = [EightPuzzle(100000, None, i) for i in range(1, 9)]
 
     for puzzle in list_of_puzzles:
-        #print("**************")
-        print("Puzzle with " + str(puzzle.tiles) + " tiles ")
-        for i in range(1, 11):
-            puzzle.weighted_a_star(i)
-        puzzle.greedy_best_first()
-        #puzzle.weighted_a_star(10)
 
+        for i in range(1, 11):
+            print(puzzle.weighted_a_star(i))
+        print(puzzle.greedy_best_first())
+
+
+    #puzzle = EightPuzzle(10000, tuple([5,1,2,4,0,6,3,7,8]), 8 , False)
+    #puzzle.a_star()
 
 if __name__ == "__main__":
     main()
