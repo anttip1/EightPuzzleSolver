@@ -1,4 +1,4 @@
-# EightPuzzleSolver
+# Eight-Puzzle Solver
 
 ## Introduction
 
